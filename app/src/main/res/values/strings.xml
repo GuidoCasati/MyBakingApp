@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">My Baking App</string>
+
+    <string name="error_loading_data">An error has occurred while loading data or no data might have been retrieved at all.</string>
+    <string name="recipes_list_title">What are we baking today...?</string>
+    <string name="thumbnail_cd">thumbnail</string>
+    <string name="icon_cd">icon</string>
+    <string name="appwidget_text">Baking App</string>
+
+</resources>

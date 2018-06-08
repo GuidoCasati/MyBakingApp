@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorPrimaryDark"
+    android:layout_marginVertical="@dimen/marginVertical"
+    android:layout_marginHorizontal="@dimen/marginHorizontal">
+
+    <TextView
+        android:id="@+id/tv_recipe_detail_step"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:fontFamily="casual"
+        android:paddingHorizontal="@dimen/marginHorizontal"
+        android:paddingVertical="@dimen/marginVertical"
+        android:textAlignment="center"
+        android:textSize="@dimen/mediumTextSize"
+        tools:text="recipe step" />
+
+</android.support.v7.widget.CardView>
