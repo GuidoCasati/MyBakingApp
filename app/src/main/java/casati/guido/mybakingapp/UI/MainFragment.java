@@ -23,6 +23,7 @@ import casati.guido.mybakingapp.Data.Recipe;
 import casati.guido.mybakingapp.R;
 import casati.guido.mybakingapp.Utils.RecipeAPIClient;
 import casati.guido.mybakingapp.Utils.RecipeApiInterface;
+import casati.guido.mybakingapp.Utils.SimpleIdlingResource;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -48,6 +49,9 @@ public class MainFragment extends Fragment implements RecipeAdapter.RecipeAdapte
     ProgressBar progressBar;
     @BindView(R.id.error_textView)
     TextView errorTextView;
+
+    //espresso
+    private SimpleIdlingResource simpleIdlingResource = null;
 
     public MainFragment() {
     }
@@ -119,6 +123,10 @@ public class MainFragment extends Fragment implements RecipeAdapter.RecipeAdapte
         // Attaching the adapter to the RecyclerView
         recyclerViewRecipes.setAdapter(recipeAdapter);
 
+        //IdlingResource
+        if (simpleIdlingResource != null)
+            simpleIdlingResource.setIdleState(false);
+
         loadRecipes();
 
         return rootView;
@@ -149,6 +157,8 @@ public class MainFragment extends Fragment implements RecipeAdapter.RecipeAdapte
                 if (responseRecipes != null) {
                     recipeAdapter.setRecipeData(responseRecipes);
                     errorTextView.setVisibility(View.GONE);
+                    if (simpleIdlingResource != null)
+                        simpleIdlingResource.setIdleState(true);
                 } else {
                     errorTextView.setVisibility(View.VISIBLE);
                 }

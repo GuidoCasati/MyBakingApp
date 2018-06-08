@@ -115,6 +115,7 @@ public class RecipeStepDetailFragment extends Fragment {
         super.onPause();
         if (simpleExoPlayer != null) {
             playerPosition = simpleExoPlayer.getCurrentPosition();
+            isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
             releasePlayer();
         }
     }
@@ -157,10 +158,13 @@ public class RecipeStepDetailFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable("Step", step);
-        playerPosition = simpleExoPlayer.getCurrentPosition();
-        outState.putLong("playerPosition",playerPosition);
-        isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
+        if(simpleExoPlayer!=null){
+            playerPosition = simpleExoPlayer.getCurrentPosition();
+            isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
+        }
         outState.putBoolean("PlayState", isPlayWhenReady);
+        outState.putLong("playerPosition",playerPosition);
+
     }
 
     /**
@@ -202,8 +206,6 @@ public class RecipeStepDetailFragment extends Fragment {
             step = (Step) savedInstanceState.getSerializable("Step");
             playerPosition = savedInstanceState.getLong("playerPosition", C.TIME_UNSET);
             isPlayWhenReady = savedInstanceState.getBoolean("PlayState");
-            simpleExoPlayer.setPlayWhenReady(isPlayWhenReady);
-
         } else if (savedInstanceState == null) {
         }
 
@@ -232,14 +234,13 @@ public class RecipeStepDetailFragment extends Fragment {
             videoURI = Uri.parse(sVideoURL);
             iv_thumbNail.setVisibility(View.GONE);
             simpleExoPlayerView.setVisibility(View.VISIBLE);
-            if (playerPosition != C.TIME_UNSET)
-                simpleExoPlayer.seekTo(playerPosition);
             initializePlayer(videoURI);
             if (iOrientation == Configuration.ORIENTATION_LANDSCAPE && !bTwoPane) {
                 //video full screen
                 simpleExoPlayerView.getLayoutParams().height = LayoutParams.MATCH_PARENT;
                 simpleExoPlayerView.getLayoutParams().width = LayoutParams.MATCH_PARENT;
                 simpleExoPlayerView.setPadding(0,0,0,0);
+                simpleExoPlayerView.hideController();
                 tv_step_description.setVisibility(View.GONE);
             }
         } else {
@@ -294,6 +295,8 @@ public class RecipeStepDetailFragment extends Fragment {
             String userAgent = Util.getUserAgent(getActivity(), "My Baking App");
             MediaSource mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
                     getActivity(), userAgent), new DefaultExtractorsFactory(), null, null);
+            if (playerPosition != C.TIME_UNSET)
+                simpleExoPlayer.seekTo(playerPosition);
             simpleExoPlayer.prepare(mediaSource);
             simpleExoPlayer.setPlayWhenReady(isPlayWhenReady);
         }
