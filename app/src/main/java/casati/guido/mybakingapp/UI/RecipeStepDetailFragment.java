@@ -127,9 +127,11 @@ public class RecipeStepDetailFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
-        playerPosition = simpleExoPlayer.getCurrentPosition();
-        releasePlayer();
+        if (simpleExoPlayer != null){
+            isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
+            playerPosition = simpleExoPlayer.getCurrentPosition();
+            releasePlayer();
+        }
     }
 
     /**
@@ -153,7 +155,7 @@ public class RecipeStepDetailFragment extends Fragment {
      */
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        //super.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
         outState.putParcelable("Step", step);
         playerPosition = simpleExoPlayer.getCurrentPosition();
         outState.putLong("playerPosition",playerPosition);
