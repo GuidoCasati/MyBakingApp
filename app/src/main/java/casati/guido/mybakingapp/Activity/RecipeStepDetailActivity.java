@@ -40,11 +40,11 @@ public class RecipeStepDetailActivity extends AppCompatActivity {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
         outState.putParcelableArrayList("Steps", stepArrayList);
         outState.putInt("Index", iIndex);
         outState.putString("Name", sRecipeName);
         outState.putSerializable("Step", step);
+        super.onSaveInstanceState(outState);
     }
 
     @Override

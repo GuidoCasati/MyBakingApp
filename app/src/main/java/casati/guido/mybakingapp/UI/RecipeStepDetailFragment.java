@@ -13,10 +13,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.view.ViewGroup.LayoutParams;
+import android.widget.Toast;
 
+import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.LoadControl;
@@ -60,7 +62,9 @@ public class RecipeStepDetailFragment extends Fragment {
     ImageView iv_thumbNail;
     boolean bTwoPane;
     int iOrientation;
-
+    Uri videoURI;
+    long playerPosition;
+    boolean isPlayWhenReady = true;
     /**
      * Called to do initial creation of a fragment.  This is called after
      * {@link #onAttach(Activity)} and before
@@ -89,6 +93,46 @@ public class RecipeStepDetailFragment extends Fragment {
     }
 
     /**
+     * Called when the fragment is visible to the user and actively running.
+     * This is generally
+     * tied to {@link Activity#onResume() Activity.onResume} of the containing
+     * Activity's lifecycle.
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (videoURI != null)
+            initializePlayer(videoURI);
+    }
+
+    /**
+     * Called when the Fragment is no longer resumed.  This is generally
+     * tied to {@link Activity#onPause() Activity.onPause} of the containing
+     * Activity's lifecycle.
+     */
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (simpleExoPlayer != null) {
+            playerPosition = simpleExoPlayer.getCurrentPosition();
+            releasePlayer();
+        }
+    }
+
+    /**
+     * Called when the Fragment is no longer started.  This is generally
+     * tied to {@link Activity#onStop() Activity.onStop} of the containing
+     * Activity's lifecycle.
+     */
+    @Override
+    public void onStop() {
+        super.onStop();
+        isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
+        playerPosition = simpleExoPlayer.getCurrentPosition();
+        releasePlayer();
+    }
+
+    /**
      * Called to ask the fragment to save its current dynamic state, so it
      * can later be reconstructed in a new instance of its process is
      * restarted.  If a new instance of the fragment later needs to be
@@ -111,6 +155,10 @@ public class RecipeStepDetailFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         //super.onSaveInstanceState(outState);
         outState.putParcelable("Step", step);
+        playerPosition = simpleExoPlayer.getCurrentPosition();
+        outState.putLong("playerPosition",playerPosition);
+        isPlayWhenReady = simpleExoPlayer.getPlayWhenReady();
+        outState.putBoolean("PlayState", isPlayWhenReady);
     }
 
     /**
@@ -138,6 +186,8 @@ public class RecipeStepDetailFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_recipe_step_detail, container, false);
         ButterKnife.bind(this, rootView);
+        playerPosition = C.TIME_UNSET;
+
         Log.d(TAG, "onCreateView: triggered");
         //get orientation
         iOrientation = getResources().getConfiguration().orientation;
@@ -148,6 +198,10 @@ public class RecipeStepDetailFragment extends Fragment {
         if (savedInstanceState != null) {
             Log.d(TAG, "onCreateView: savedInstanceState triggered");
             step = (Step) savedInstanceState.getSerializable("Step");
+            playerPosition = savedInstanceState.getLong("playerPosition", C.TIME_UNSET);
+            isPlayWhenReady = savedInstanceState.getBoolean("PlayState");
+            simpleExoPlayer.setPlayWhenReady(isPlayWhenReady);
+
         } else if (savedInstanceState == null) {
         }
 
@@ -165,13 +219,20 @@ public class RecipeStepDetailFragment extends Fragment {
         ConnectivityManager connectivityManager = (ConnectivityManager) getActivity()
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = null;
-        if (connectivityManager != null) {
+        if (isNetworkAvailable(getContext())) {
             networkInfo = connectivityManager.getActiveNetworkInfo();
         }
+        else{
+            Toast toast = Toast.makeText(getContext(), "Network unavailable", Toast.LENGTH_LONG);
+            toast.show();
+       }
         if (StringUtils.isNotBlank(sVideoURL) && StringUtils.isNotEmpty(sVideoURL) && networkInfo != null && networkInfo.isConnected()) {
+            videoURI = Uri.parse(sVideoURL);
             iv_thumbNail.setVisibility(View.GONE);
             simpleExoPlayerView.setVisibility(View.VISIBLE);
-            initializePlayer(Uri.parse(sVideoURL));
+            if (playerPosition != C.TIME_UNSET)
+                simpleExoPlayer.seekTo(playerPosition);
+            initializePlayer(videoURI);
             if (iOrientation == Configuration.ORIENTATION_LANDSCAPE && !bTwoPane) {
                 //video full screen
                 simpleExoPlayerView.getLayoutParams().height = LayoutParams.MATCH_PARENT;
@@ -189,6 +250,16 @@ public class RecipeStepDetailFragment extends Fragment {
             }
         }
         return rootView;
+    }
+
+
+    /**
+     * Returns true if network is available or about to become available
+     */
+    public static boolean isNetworkAvailable(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
     /**
@@ -222,7 +293,7 @@ public class RecipeStepDetailFragment extends Fragment {
             MediaSource mediaSource = new ExtractorMediaSource(mediaUri, new DefaultDataSourceFactory(
                     getActivity(), userAgent), new DefaultExtractorsFactory(), null, null);
             simpleExoPlayer.prepare(mediaSource);
-            simpleExoPlayer.setPlayWhenReady(false);
+            simpleExoPlayer.setPlayWhenReady(isPlayWhenReady);
         }
     }
 
@@ -246,6 +317,7 @@ public class RecipeStepDetailFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         releasePlayer();
+        simpleExoPlayer = null;
     }
 
     /**
